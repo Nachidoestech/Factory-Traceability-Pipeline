@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Factory Traceability &amp; Connectivity Analytics</title>
+<style>
+:root{--bg:#0b0f14;--panel:#121923;--panel2:#18212d;--line:#243041;--text:#e6edf5;--muted:#8a99ad;--ok:#2a9d8f;--bad:#e76f51;--accent:#8ab6d6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif}
+.wrap{max-width:1120px;margin:0 auto;padding:40px 22px 60px}
+h1{font-size:28px;margin:0 0 6px;letter-spacing:-.01em}
+h2{font-size:17px;margin:40px 0 4px}
+.sub{color:var(--muted);font-size:14px;margin:0 0 14px;max-width:820px}
+.muted{color:var(--muted);font-size:13px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-top:26px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.kpi .l{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.kpi .v{font-size:26px;font-weight:650;margin-top:4px}
+.kpi .s{color:var(--muted);font-size:12.5px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:860px){.grid2{grid-template-columns:1fr}}
+.row{display:grid;grid-template-columns:170px 1fr 80px 180px;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:none}
+.rname b{display:block}
+.bar{height:10px;background:var(--panel2);border-radius:6px;overflow:hidden}
+.bar>i{display:block;height:100%}
+.rval{text-align:right;font-variant-numeric:tabular-nums;font-size:14px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12px;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--panel2)}
+.chip.bad{color:#f4a38c;border-color:#5b3a33}
+.chip.ok{color:#8fd8cc;border-color:#2e4d4a}
+table{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right}
+th:first-child,td:first-child,th.l,td.l{text-align:left}
+th{color:var(--muted);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;user-select:none}
+th.on{color:var(--text)}
+tr:hover td{background:rgba(255,255,255,.02)}
+td.hot{position:relative}
+td.hot .fill{position:absolute;left:0;top:0;bottom:0;opacity:.22;pointer-events:none}
+.tag{font-size:11px;padding:1px 7px;border-radius:6px;background:#3d2420;color:#f4a38c;margin-left:6px;vertical-align:middle;white-space:nowrap}
+.scroll{max-height:360px;overflow:auto}
+.val{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.val div{background:var(--panel2);border-radius:10px;padding:10px 12px}
+.val .l{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.val .v{font-size:18px;font-weight:650}
+.rng{position:relative;height:26px;margin:4px 0 2px}
+.rng .track{position:absolute;left:0;right:0;top:12px;height:2px;background:var(--line)}
+.rng .box{position:absolute;top:6px;height:14px;border-radius:4px;background:rgba(138,182,214,.25);border:1px solid var(--accent)}
+.rng .med{position:absolute;top:3px;width:3px;height:20px;background:var(--text);border-radius:2px}
+.rng .out{position:absolute;top:8px;width:9px;height:9px;border-radius:50%;background:var(--bad);transform:translateX(-50%)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:13px;margin-bottom:8px}
+footer{margin-top:44px;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Factory Traceability &amp; Connectivity Analytics</h1>
+  <p class="sub">Scan-event pipeline for a six-station line. SQL checks detect connectivity gaps and duplicate scans, isolate a defect hotspot by machine, and flag cycle-time outliers.</p>
+</header>
+
+<section class="kpis" id="kpis"></section>
+
+<h2>Traceability health by station</h2>
+<p class="sub">Coverage is units actually scanned divided by units that reached the station. The bar runs from 90% to 100%.</p>
+<div class="card" id="health"></div>
+
+<div class="grid2">
+  <div>
+    <h2>Defect hotspots by machine</h2>
+    <p class="sub">First scan per unit and station. Ratio compares each machine to its peers at the same station.</p>
+    <div class="card scroll"><table id="machines"></table></div>
+  </div>
+  <div>
+    <h2>Validation against planted faults</h2>
+    <p class="sub">The simulator injects known faults. These checks should recover them.</p>
+    <div class="card"><div class="val" id="validation"></div>
+      <p class="muted" style="margin:12px 0 0">Missing scans are only injected mid-line, because a missing final scan leaves no trace to detect.</p>
+    </div>
+  </div>
+</div>
+
+<h2>Cycle-time distribution and outliers</h2>
+<p class="sub">Range shows 5th to 95th percentile, with the median marked. Red dots are outliers beyond |z| &gt; 3 for their station.</p>
+<div class="card" id="cycle"></div>
+<div class="card scroll"><table id="outliers"></table></div>
+
+<h2>Integrity log</h2>
+<p class="sub">Units with a missing scan at a station they should have passed, and units scanned more than once at the same station.</p>
+<div class="grid2">
+  <div class="card scroll"><div class="muted" style="margin-bottom:6px">Missing scans (first 60)</div><table id="missing"></table></div>
+  <div class="card scroll"><div class="muted" style="margin-bottom:6px">Duplicate scans (first 60)</div><table id="dupes"></table></div>
+</div>
+
+<footer>
+  Prototype on simulated scan data (4,000 units, 30 days, July 2026). The SQL checks live in <code>sql/</code>, and the pipeline runs with <code>python run_pipeline.py</code>.
+</footer>
+</div>
+
+<script>
+const D = {"kpi": {"units": 4000, "scan_events": 22580, "missing": 222, "duplicates": 165, "outliers": 162, "root_cause_machine": "PLC-03", "root_cause_rate": 0.0977, "overall_fail_rate": 0.11125}, "validation": {"missing_injected": 222, "missing_detected": 222, "duplicates_injected": 165, "duplicates_detected": 165}, "health": [{"station": "SOLDER", "seq": 10, "expected_units": 4000, "scanned_units": 3947, "coverage": 0.98675, "missing": 53, "duplicates": 30, "fail_rate": 0.015338194619059593}, {"station": "PLACE", "seq": 20, "expected_units": 3939, "scanned_units": 3901, "coverage": 0.9903528814419904, "missing": 38, "duplicates": 26, "fail_rate": 0.046855105678635094}, {"station": "REFLOW", "seq": 30, "expected_units": 3756, "scanned_units": 3720, "coverage": 0.9904153354632588, "missing": 36, "duplicates": 29, "fail_rate": 0.012803414243798347}, {"station": "AOI", "seq": 40, "expected_units": 3708, "scanned_units": 3663, "coverage": 0.9878640776699029, "missing": 45, "duplicates": 21, "fail_rate": 0.011943539630836048}, {"station": "FTEST", "seq": 50, "expected_units": 3666, "scanned_units": 3616, "coverage": 0.9863611565739225, "missing": 50, "duplicates": 23, "fail_rate": 0.02720527617477329}, {"station": "PACK", "seq": 60, "expected_units": 3568, "scanned_units": 3568, "coverage": 1.0, "missing": 0, "duplicates": 36, "fail_rate": 0.00388457269700333}], "machines": [{"station": "PLACE", "seq": 20, "machine": "PLC-03", "units": 1382, "fails": 135, "fail_rate": 0.0977, "ratio_vs_peers": 5.13}, {"station": "FTEST", "seq": 50, "machine": "FT-01", "units": 1788, "fails": 49, "fail_rate": 0.0274, "ratio_vs_peers": 1.02}, {"station": "FTEST", "seq": 50, "machine": "FT-02", "units": 1828, "fails": 49, "fail_rate": 0.0268, "ratio_vs_peers": 0.98}, {"station": "PLACE", "seq": 20, "machine": "PLC-01", "units": 1278, "fails": 25, "fail_rate": 0.0196, "ratio_vs_peers": 0.33}, {"station": "PLACE", "seq": 20, "machine": "PLC-02", "units": 1241, "fails": 23, "fail_rate": 0.0185, "ratio_vs_peers": 0.31}, {"station": "REFLOW", "seq": 30, "machine": "RF-01", "units": 1912, "fails": 31, "fail_rate": 0.0162, "ratio_vs_peers": 1.72}, {"station": "SOLDER", "seq": 10, "machine": "SP-01", "units": 1968, "fails": 31, "fail_rate": 0.0158, "ratio_vs_peers": 1.04}, {"station": "SOLDER", "seq": 10, "machine": "SP-02", "units": 1979, "fails": 30, "fail_rate": 0.0152, "ratio_vs_peers": 0.96}, {"station": "AOI", "seq": 40, "machine": "AOI-01", "units": 3663, "fails": 42, "fail_rate": 0.0115, "ratio_vs_peers": NaN}, {"station": "REFLOW", "seq": 30, "machine": "RF-02", "units": 1808, "fails": 17, "fail_rate": 0.0094, "ratio_vs_peers": 0.58}, {"station": "PACK", "seq": 60, "machine": "PK-01", "units": 3568, "fails": 13, "fail_rate": 0.0036, "ratio_vs_peers": NaN}], "cycle": [{"station": "SOLDER", "p5": 35.4, "p50": 42.1, "p95": 48.5, "mean": 42.1, "outliers": 12}, {"station": "PLACE", "p5": 55.2, "p50": 65.2, "p95": 74.7, "mean": 65.0, "outliers": 14}, {"station": "REFLOW", "p5": 102.9, "p50": 118.1, "p95": 136.2, "mean": 121.1, "outliers": 110}, {"station": "AOI", "p5": 25.2, "p50": 30.0, "p95": 34.8, "mean": 30.0, "outliers": 9}, {"station": "FTEST", "p5": 76.5, "p50": 88.2, "p95": 99.9, "mean": 88.2, "outliers": 7}, {"station": "PACK", "p5": 20.8, "p50": 25.0, "p95": 29.0, "mean": 25.0, "outliers": 10}], "outliers": [{"unit_id": "U02631", "station": "REFLOW", "machine": "RF-02", "cycle_seconds": 262.2, "z": 6.88}, {"unit_id": "U03872", "station": "REFLOW", "machine": "RF-02", "cycle_seconds": 261.7, "z": 6.85}, {"unit_id": "U00541", "station": "REFLOW", "machine": "RF-02", "cycle_seconds": 260.1, "z": 6.77}, {"unit_id": "U01266", "station": "REFLOW", "machine": "RF-02", "cycle_seconds": 257.4, "z": 6.64}, {"unit_id": "U03422", "station": "REFLOW", "machine": "RF-02", "cycle_seconds": 256.8, "z": 6.61}, {"unit_id": "U02156", "station": "REFLOW", "machine": "RF-02", "cycle_seconds": 255.6, "z": 6.55}, {"unit_id": "U01754", "station": "REFLOW", "machine": "RF-02", "cycle_seconds": 253.6, "z": 6.46}, {"unit_id": "U01929", "station": "REFLOW", "machine": "RF-02", "cycle_seconds": 252.1, "z": 6.38}, {"unit_id": "U02434", "station": "REFLOW", "machine": "RF-02", "cycle_seconds": 249.1, "z": 6.24}, {"unit_id": "U03588", "station": "REFLOW", "machine": "RF-02", "cycle_seconds": 249.1, "z": 6.24}, {"unit_id": "U02530", "station": "REFLOW", "machine": "RF-02", "cycle_seconds": 246.0, "z": 6.09}, {"unit_id": "U03447", "station": "REFLOW", "machine": "RF-02", "cycle_seconds": 245.7, "z": 6.07}, {"unit_id": "U00278", "station": "REFLOW", "machine": "RF-02", "cycle_seconds": 245.6, "z": 6.07}, {"unit_id": "U01620", "station": "REFLOW", "machine": "RF-02", "cycle_seconds": 244.6, "z": 6.02}, {"unit_id": "U01211", "station": "REFLOW", "machine": "RF-02", "cycle_seconds": 243.2, "z": 5.95}, {"unit_id": "U01543", "station": "REFLOW", "machine": "RF-02", "cycle_seconds": 242.4, "z": 5.91}, {"unit_id": "U01543", "station": "REFLOW", "machine": "RF-02", "cycle_seconds": 242.4, "z": 5.91}, {"unit_id": "U02505", "station": "REFLOW", "machine": "RF-02", "cycle_seconds": 242.3, "z": 5.91}, {"unit_id": "U03825", "station": "REFLOW", "machine": "RF-02", "cycle_seconds": 241.4, "z": 5.86}, {"unit_id": "U00192", "station": "REFLOW", "machine": "RF-02", "cycle_seconds": 241.0, "z": 5.84}], "missing": [{"unit_id": "U00010", "station": "PLACE", "seq": 20}, {"unit_id": "U00017", "station": "PLACE", "seq": 20}, {"unit_id": "U00018", "station": "REFLOW", "seq": 30}, {"unit_id": "U00022", "station": "SOLDER", "seq": 10}, {"unit_id": "U00033", "station": "PLACE", "seq": 20}, {"unit_id": "U00038", "station": "AOI", "seq": 40}, {"unit_id": "U00053", "station": "REFLOW", "seq": 30}, {"unit_id": "U00077", "station": "FTEST", "seq": 50}, {"unit_id": "U00095", "station": "SOLDER", "seq": 10}, {"unit_id": "U00106", "station": "PLACE", "seq": 20}, {"unit_id": "U00136", "station": "PLACE", "seq": 20}, {"unit_id": "U00154", "station": "AOI", "seq": 40}, {"unit_id": "U00160", "station": "PLACE", "seq": 20}, {"unit_id": "U00175", "station": "FTEST", "seq": 50}, {"unit_id": "U00203", "station": "PLACE", "seq": 20}, {"unit_id": "U00215", "station": "REFLOW", "seq": 30}, {"unit_id": "U00227", "station": "REFLOW", "seq": 30}, {"unit_id": "U00235", "station": "SOLDER", "seq": 10}, {"unit_id": "U00246", "station": "REFLOW", "seq": 30}, {"unit_id": "U00246", "station": "FTEST", "seq": 50}, {"unit_id": "U00266", "station": "SOLDER", "seq": 10}, {"unit_id": "U00270", "station": "REFLOW", "seq": 30}, {"unit_id": "U00280", "station": "SOLDER", "seq": 10}, {"unit_id": "U00295", "station": "SOLDER", "seq": 10}, {"unit_id": "U00310", "station": "AOI", "seq": 40}, {"unit_id": "U00337", "station": "AOI", "seq": 40}, {"unit_id": "U00347", "station": "AOI", "seq": 40}, {"unit_id": "U00351", "station": "AOI", "seq": 40}, {"unit_id": "U00354", "station": "AOI", "seq": 40}, {"unit_id": "U00409", "station": "SOLDER", "seq": 10}, {"unit_id": "U00410", "station": "PLACE", "seq": 20}, {"unit_id": "U00431", "station": "AOI", "seq": 40}, {"unit_id": "U00455", "station": "SOLDER", "seq": 10}, {"unit_id": "U00460", "station": "PLACE", "seq": 20}, {"unit_id": "U00494", "station": "SOLDER", "seq": 10}, {"unit_id": "U00508", "station": "AOI", "seq": 40}, {"unit_id": "U00513", "station": "SOLDER", "seq": 10}, {"unit_id": "U00533", "station": "REFLOW", "seq": 30}, {"unit_id": "U00536", "station": "REFLOW", "seq": 30}, {"unit_id": "U00551", "station": "REFLOW", "seq": 30}, {"unit_id": "U00611", "station": "PLACE", "seq": 20}, {"unit_id": "U00636", "station": "REFLOW", "seq": 30}, {"unit_id": "U00640", "station": "PLACE", "seq": 20}, {"unit_id": "U00641", "station": "FTEST", "seq": 50}, {"unit_id": "U00662", "station": "AOI", "seq": 40}, {"unit_id": "U00673", "station": "SOLDER", "seq": 10}, {"unit_id": "U00705", "station": "AOI", "seq": 40}, {"unit_id": "U00727", "station": "PLACE", "seq": 20}, {"unit_id": "U00735", "station": "SOLDER", "seq": 10}, {"unit_id": "U00738", "station": "SOLDER", "seq": 10}, {"unit_id": "U00741", "station": "FTEST", "seq": 50}, {"unit_id": "U00753", "station": "PLACE", "seq": 20}, {"unit_id": "U00767", "station": "REFLOW", "seq": 30}, {"unit_id": "U00774", "station": "PLACE", "seq": 20}, {"unit_id": "U00774", "station": "AOI", "seq": 40}, {"unit_id": "U00796", "station": "REFLOW", "seq": 30}, {"unit_id": "U00796", "station": "FTEST", "seq": 50}, {"unit_id": "U00828", "station": "FTEST", "seq": 50}, {"unit_id": "U00843", "station": "FTEST", "seq": 50}, {"unit_id": "U00844", "station": "PLACE", "seq": 20}], "duplicates": [{"unit_id": "U00225", "station": "REFLOW", "scan_count": 2, "first_scan": "2026-07-03 01:27:28", "last_scan": "2026-07-03 01:27:29", "gap_seconds": 1.0}, {"unit_id": "U00416", "station": "PACK", "scan_count": 2, "first_scan": "2026-07-04 09:11:25", "last_scan": "2026-07-04 09:11:26", "gap_seconds": 1.0}, {"unit_id": "U00442", "station": "SOLDER", "scan_count": 2, "first_scan": "2026-07-04 14:56:39", "last_scan": "2026-07-04 14:56:40", "gap_seconds": 1.0}, {"unit_id": "U00620", "station": "PACK", "scan_count": 2, "first_scan": "2026-07-06 02:19:21", "last_scan": "2026-07-06 02:19:22", "gap_seconds": 1.0}, {"unit_id": "U00627", "station": "PACK", "scan_count": 2, "first_scan": "2026-07-06 03:27:36", "last_scan": "2026-07-06 03:27:37", "gap_seconds": 1.0}, {"unit_id": "U00683", "station": "REFLOW", "scan_count": 2, "first_scan": "2026-07-06 14:46:01", "last_scan": "2026-07-06 14:46:02", "gap_seconds": 1.0}, {"unit_id": "U00716", "station": "REFLOW", "scan_count": 2, "first_scan": "2026-07-06 19:51:32", "last_scan": "2026-07-06 19:51:33", "gap_seconds": 1.0}, {"unit_id": "U00777", "station": "PLACE", "scan_count": 2, "first_scan": "2026-07-07 04:53:50", "last_scan": "2026-07-07 04:53:51", "gap_seconds": 1.0}, {"unit_id": "U00909", "station": "SOLDER", "scan_count": 2, "first_scan": "2026-07-08 06:16:43", "last_scan": "2026-07-08 06:16:44", "gap_seconds": 1.0}, {"unit_id": "U01028", "station": "PACK", "scan_count": 2, "first_scan": "2026-07-09 01:48:41", "last_scan": "2026-07-09 01:48:42", "gap_seconds": 1.0}, {"unit_id": "U01068", "station": "PLACE", "scan_count": 2, "first_scan": "2026-07-09 07:26:00", "last_scan": "2026-07-09 07:26:01", "gap_seconds": 1.0}, {"unit_id": "U01124", "station": "SOLDER", "scan_count": 2, "first_scan": "2026-07-09 16:14:41", "last_scan": "2026-07-09 16:14:42", "gap_seconds": 1.0}, {"unit_id": "U01351", "station": "AOI", "scan_count": 2, "first_scan": "2026-07-11 07:11:39", "last_scan": "2026-07-11 07:11:40", "gap_seconds": 1.0}, {"unit_id": "U01725", "station": "PACK", "scan_count": 2, "first_scan": "2026-07-14 01:31:38", "last_scan": "2026-07-14 01:31:39", "gap_seconds": 1.0}, {"unit_id": "U01798", "station": "PLACE", "scan_count": 2, "first_scan": "2026-07-14 14:37:20", "last_scan": "2026-07-14 14:37:21", "gap_seconds": 1.0}, {"unit_id": "U01827", "station": "REFLOW", "scan_count": 2, "first_scan": "2026-07-14 20:11:24", "last_scan": "2026-07-14 20:11:25", "gap_seconds": 1.0}, {"unit_id": "U02581", "station": "FTEST", "scan_count": 2, "first_scan": "2026-07-20 16:15:54", "last_scan": "2026-07-20 16:15:55", "gap_seconds": 1.0}, {"unit_id": "U02790", "station": "SOLDER", "scan_count": 2, "first_scan": "2026-07-22 04:55:41", "last_scan": "2026-07-22 04:55:42", "gap_seconds": 1.0}, {"unit_id": "U02819", "station": "PLACE", "scan_count": 2, "first_scan": "2026-07-22 10:47:16", "last_scan": "2026-07-22 10:47:17", "gap_seconds": 1.0}, {"unit_id": "U02986", "station": "REFLOW", "scan_count": 2, "first_scan": "2026-07-23 16:54:58", "last_scan": "2026-07-23 16:54:59", "gap_seconds": 1.0}, {"unit_id": "U03087", "station": "PACK", "scan_count": 2, "first_scan": "2026-07-24 09:52:17", "last_scan": "2026-07-24 09:52:18", "gap_seconds": 1.0}, {"unit_id": "U03127", "station": "PACK", "scan_count": 2, "first_scan": "2026-07-24 18:06:37", "last_scan": "2026-07-24 18:06:38", "gap_seconds": 1.0}, {"unit_id": "U03140", "station": "FTEST", "scan_count": 2, "first_scan": "2026-07-24 20:59:12", "last_scan": "2026-07-24 20:59:13", "gap_seconds": 1.0}, {"unit_id": "U03340", "station": "AOI", "scan_count": 2, "first_scan": "2026-07-26 07:21:30", "last_scan": "2026-07-26 07:21:31", "gap_seconds": 1.0}, {"unit_id": "U03407", "station": "PACK", "scan_count": 2, "first_scan": "2026-07-26 20:30:55", "last_scan": "2026-07-26 20:30:56", "gap_seconds": 1.0}, {"unit_id": "U03465", "station": "SOLDER", "scan_count": 2, "first_scan": "2026-07-27 07:51:49", "last_scan": "2026-07-27 07:51:50", "gap_seconds": 1.0}, {"unit_id": "U03697", "station": "SOLDER", "scan_count": 2, "first_scan": "2026-07-28 22:08:30", "last_scan": "2026-07-28 22:08:31", "gap_seconds": 1.0}, {"unit_id": "U03968", "station": "FTEST", "scan_count": 2, "first_scan": "2026-07-30 23:57:31", "last_scan": "2026-07-30 23:57:32", "gap_seconds": 1.0}, {"unit_id": "U00076", "station": "PLACE", "scan_count": 2, "first_scan": "2026-07-01 19:27:56", "last_scan": "2026-07-01 19:27:58", "gap_seconds": 2.0}, {"unit_id": "U00077", "station": "PLACE", "scan_count": 2, "first_scan": "2026-07-01 19:44:09", "last_scan": "2026-07-01 19:44:11", "gap_seconds": 2.0}, {"unit_id": "U00434", "station": "AOI", "scan_count": 2, "first_scan": "2026-07-04 13:38:44", "last_scan": "2026-07-04 13:38:46", "gap_seconds": 2.0}, {"unit_id": "U00572", "station": "REFLOW", "scan_count": 2, "first_scan": "2026-07-05 15:26:37", "last_scan": "2026-07-05 15:26:39", "gap_seconds": 2.0}, {"unit_id": "U00573", "station": "REFLOW", "scan_count": 2, "first_scan": "2026-07-05 15:34:35", "last_scan": "2026-07-05 15:34:37", "gap_seconds": 2.0}, {"unit_id": "U00587", "station": "REFLOW", "scan_count": 2, "first_scan": "2026-07-05 19:18:54", "last_scan": "2026-07-05 19:18:56", "gap_seconds": 2.0}, {"unit_id": "U00646", "station": "AOI", "scan_count": 2, "first_scan": "2026-07-06 07:13:58", "last_scan": "2026-07-06 07:14:00", "gap_seconds": 2.0}, {"unit_id": "U00659", "station": "FTEST", "scan_count": 2, "first_scan": "2026-07-06 10:44:12", "last_scan": "2026-07-06 10:44:14", "gap_seconds": 2.0}, {"unit_id": "U00805", "station": "PACK", "scan_count": 2, "first_scan": "2026-07-07 08:31:32", "last_scan": "2026-07-07 08:31:34", "gap_seconds": 2.0}, {"unit_id": "U00807", "station": "FTEST", "scan_count": 2, "first_scan": "2026-07-07 08:45:08", "last_scan": "2026-07-07 08:45:10", "gap_seconds": 2.0}, {"unit_id": "U00898", "station": "AOI", "scan_count": 2, "first_scan": "2026-07-08 03:41:58", "last_scan": "2026-07-08 03:42:00", "gap_seconds": 2.0}, {"unit_id": "U00966", "station": "PLACE", "scan_count": 2, "first_scan": "2026-07-08 16:10:53", "last_scan": "2026-07-08 16:10:55", "gap_seconds": 2.0}, {"unit_id": "U01280", "station": "SOLDER", "scan_count": 2, "first_scan": "2026-07-10 19:12:10", "last_scan": "2026-07-10 19:12:12", "gap_seconds": 2.0}, {"unit_id": "U01296", "station": "SOLDER", "scan_count": 2, "first_scan": "2026-07-10 22:16:23", "last_scan": "2026-07-10 22:16:25", "gap_seconds": 2.0}, {"unit_id": "U01468", "station": "FTEST", "scan_count": 2, "first_scan": "2026-07-12 04:57:02", "last_scan": "2026-07-12 04:57:04", "gap_seconds": 2.0}, {"unit_id": "U01488", "station": "REFLOW", "scan_count": 2, "first_scan": "2026-07-12 08:46:06", "last_scan": "2026-07-12 08:46:08", "gap_seconds": 2.0}, {"unit_id": "U01543", "station": "REFLOW", "scan_count": 2, "first_scan": "2026-07-12 17:19:48", "last_scan": "2026-07-12 17:19:50", "gap_seconds": 2.0}, {"unit_id": "U01616", "station": "AOI", "scan_count": 2, "first_scan": "2026-07-13 06:12:02", "last_scan": "2026-07-13 06:12:04", "gap_seconds": 2.0}, {"unit_id": "U01798", "station": "PACK", "scan_count": 2, "first_scan": "2026-07-14 14:42:20", "last_scan": "2026-07-14 14:42:22", "gap_seconds": 2.0}, {"unit_id": "U01804", "station": "PLACE", "scan_count": 2, "first_scan": "2026-07-14 15:59:53", "last_scan": "2026-07-14 15:59:55", "gap_seconds": 2.0}, {"unit_id": "U01831", "station": "PLACE", "scan_count": 2, "first_scan": "2026-07-14 21:21:27", "last_scan": "2026-07-14 21:21:29", "gap_seconds": 2.0}, {"unit_id": "U01910", "station": "REFLOW", "scan_count": 2, "first_scan": "2026-07-15 09:20:28", "last_scan": "2026-07-15 09:20:30", "gap_seconds": 2.0}, {"unit_id": "U01946", "station": "REFLOW", "scan_count": 2, "first_scan": "2026-07-15 16:19:10", "last_scan": "2026-07-15 16:19:12", "gap_seconds": 2.0}, {"unit_id": "U02080", "station": "REFLOW", "scan_count": 2, "first_scan": "2026-07-16 16:48:28", "last_scan": "2026-07-16 16:48:30", "gap_seconds": 2.0}, {"unit_id": "U02165", "station": "SOLDER", "scan_count": 2, "first_scan": "2026-07-17 09:39:29", "last_scan": "2026-07-17 09:39:31", "gap_seconds": 2.0}, {"unit_id": "U02180", "station": "REFLOW", "scan_count": 2, "first_scan": "2026-07-17 12:12:05", "last_scan": "2026-07-17 12:12:07", "gap_seconds": 2.0}, {"unit_id": "U02188", "station": "FTEST", "scan_count": 2, "first_scan": "2026-07-17 13:38:48", "last_scan": "2026-07-17 13:38:50", "gap_seconds": 2.0}, {"unit_id": "U02322", "station": "PACK", "scan_count": 2, "first_scan": "2026-07-18 16:11:01", "last_scan": "2026-07-18 16:11:03", "gap_seconds": 2.0}, {"unit_id": "U02400", "station": "PACK", "scan_count": 2, "first_scan": "2026-07-19 08:52:29", "last_scan": "2026-07-19 08:52:31", "gap_seconds": 2.0}, {"unit_id": "U02412", "station": "PLACE", "scan_count": 2, "first_scan": "2026-07-19 10:22:41", "last_scan": "2026-07-19 10:22:43", "gap_seconds": 2.0}, {"unit_id": "U02414", "station": "AOI", "scan_count": 2, "first_scan": "2026-07-19 10:55:18", "last_scan": "2026-07-19 10:55:20", "gap_seconds": 2.0}, {"unit_id": "U02429", "station": "PACK", "scan_count": 2, "first_scan": "2026-07-19 13:12:39", "last_scan": "2026-07-19 13:12:41", "gap_seconds": 2.0}]};
+const $ = s => document.querySelector(s);
+const fmt = n => Number(n).toLocaleString('en-US');
+const pct = (x, d = 1) => (100 * x).toFixed(d) + '%';
+
+// KPIs
+const k = D.kpi;
+const kpis = [
+  ['Units simulated', fmt(k.units), 'Through six stations'],
+  ['Scan events', fmt(k.scan_events), 'Including re-sends'],
+  ['Missing scans', fmt(k.missing), 'Connectivity gaps (SQL)'],
+  ['Duplicate scans', fmt(k.duplicates), 'Integrity issues (SQL)'],
+  ['Cycle outliers', fmt(k.outliers), '|z| > 3 within station'],
+  ['Hotspot fail rate', pct(k.root_cause_rate), k.root_cause_machine + ' vs peers']
+];
+$('#kpis').innerHTML = kpis.map(([l, v, s]) =>
+  `<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
+
+// Station health
+$('#health').innerHTML = D.health.map(h => {
+  const w = Math.max(0, Math.min(100, (h.coverage - 0.9) / 0.1 * 100));
+  const good = h.coverage >= 0.99;
+  return `<div class="row">
+    <div class="rname"><b>${h.station}</b><span class="muted">step ${h.seq}</span></div>
+    <div class="bar"><i style="width:${w.toFixed(1)}%;background:${good ? 'var(--ok)' : 'var(--bad)'}"></i></div>
+    <div class="rval">${pct(h.coverage, 2)}</div>
+    <div class="chips">
+      <span class="chip ${h.missing ? 'bad' : 'ok'}">${h.missing} missing</span>
+      <span class="chip ${h.duplicates ? 'bad' : 'ok'}">${h.duplicates} dup</span>
+    </div></div>`;
+}).join('');
+
+// Machines
+const maxR = Math.max(...D.machines.map(m => m.fail_rate));
+let mSort = {key: 'fail_rate', dir: -1};
+function renderMachines() {
+  const rows = [...D.machines].sort((a, b) => (a[mSort.key] > b[mSort.key] ? 1 : -1) * mSort.dir);
+  const cols = [['station', 'Station', 'l'], ['machine', 'Machine', 'l'], ['units', 'Units'], ['fails', 'Fails'],
+                ['fail_rate', 'Fail rate'], ['ratio_vs_peers', 'vs peers']];
+  $('#machines').innerHTML = `<thead><tr>${cols.map(([k, n, c]) =>
+    `<th class="${c || ''} ${mSort.key === k ? 'on' : ''}" data-k="${k}">${n}${mSort.key === k ? (mSort.dir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('')}</tr></thead>
+  <tbody>${rows.map(m => {
+    const hot = m.machine === k.root_cause_machine;
+    return `<tr>
+      <td class="l">${m.station}</td>
+      <td class="l">${m.machine}${hot ? '<span class="tag">root cause</span>' : ''}</td>
+      <td>${fmt(m.units)}</td><td>${fmt(m.fails)}</td>
+      <td class="hot"><span class="fill" style="width:${(100 * m.fail_rate / maxR).toFixed(1)}%;background:${hot ? 'var(--bad)' : 'var(--accent)'}"></span>${pct(m.fail_rate, 2)}</td>
+      <td>${m.ratio_vs_peers.toFixed(2)}x</td></tr>`;
+  }).join('')}</tbody>`;
+  document.querySelectorAll('#machines th').forEach(th => th.addEventListener('click', () => {
+    const key = th.dataset.k;
+    mSort = {key, dir: mSort.key === key ? -mSort.dir : (key === 'station' || key === 'machine' ? 1 : -1)};
+    renderMachines();
+  }));
+}
+renderMachines();
+
+// Validation
+const v = D.validation;
+const vcell = (l, a, b) => `<div><div class="l">${l}</div><div class="v">${fmt(b)} / ${fmt(a)}</div><div class="muted">${b === a ? 'all recovered' : 'detected / injected'}</div></div>`;
+$('#validation').innerHTML =
+  vcell('Missing scans', v.missing_injected, v.missing_detected) +
+  vcell('Duplicate scans', v.duplicates_injected, v.duplicates_detected);
+
+// Cycle time ranges
+const cMax = Math.max(...D.cycle.map(c => c.p95)) * 1.1;
+const pos = x => (100 * x / cMax).toFixed(2) + '%';
+$('#cycle').innerHTML = `<div class="legend"><span>5th–95th percentile</span><span>median ▮</span><span style="color:var(--bad)">● outlier count shown at right</span></div>` +
+  D.cycle.map(c => `<div class="row" style="grid-template-columns:110px 1fr 120px">
+    <div class="rname"><b>${c.station}</b><span class="muted">mean ${c.mean}s</span></div>
+    <div class="rng"><div class="track"></div>
+      <div class="box" style="left:${pos(c.p5)};width:calc(${pos(c.p95)} - ${pos(c.p5)})"></div>
+      <div class="med" style="left:${pos(c.p50)}"></div></div>
+    <div class="rval">${c.p50}s median${c.outliers ? `<br><span style="color:var(--bad)">${c.outliers} outliers</span>` : ''}</div></div>`).join('');
+
+// Outliers
+$('#outliers').innerHTML = `<thead><tr><th class="l">Unit</th><th class="l">Station</th><th class="l">Machine</th><th>Cycle (s)</th><th>z-score</th></tr></thead><tbody>` +
+  D.outliers.map(o => `<tr><td class="l">${o.unit_id}</td><td class="l">${o.station}</td><td class="l">${o.machine}</td><td>${o.cycle_seconds}</td><td>${o.z.toFixed(2)}</td></tr>`).join('') +
+  `</tbody>`;
+
+// Integrity tables
+$('#missing').innerHTML = `<thead><tr><th class="l">Unit</th><th class="l">Station</th><th>Step</th></tr></thead><tbody>` +
+  D.missing.map(r => `<tr><td class="l">${r.unit_id}</td><td class="l">${r.station}</td><td>${r.seq}</td></tr>`).join('') + `</tbody>`;
+$('#dupes').innerHTML = `<thead><tr><th class="l">Unit</th><th class="l">Station</th><th>Scans</th><th>Gap (s)</th></tr></thead><tbody>` +
+  D.duplicates.map(r => `<tr><td class="l">${r.unit_id}</td><td class="l">${r.station}</td><td>${r.scan_count}</td><td>${r.gap_seconds}</td></tr>`).join('') + `</tbody>`;
+</script>
+</body>
+</html>
